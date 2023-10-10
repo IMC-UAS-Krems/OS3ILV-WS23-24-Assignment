@@ -332,18 +332,15 @@ the leaderboard will look like this:
 ##### Quitting the client
 
 Pressing `q` from the main menu causes the client to quit.
-Upon quitting the client must output the following message:
+Upon quitting the client must output the following message and return the value `0` indicating that client decides to quit.
 
 ```
-Quitting (client)!
+Quitting !
 ```
 
 > Note: if the server quits; then, all the clients must also quit.
-> In this case, the message is different.
+> In this case, the quitting message is the same, but the return value is different (`1`) indicating that something unexpected happened.
 
-```
-Quitting (server)!
-```
 
 
 ## Potential (Abstract) Test Cases
