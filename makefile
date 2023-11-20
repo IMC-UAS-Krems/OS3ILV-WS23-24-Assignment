@@ -1,6 +1,8 @@
 # This makefile is based on http://www.throwtheswitch.org/build/make
 SHELL := /bin/bash
 
+# Helper to prompt for client name on demand
+CLIENT_NAME ?= $(shell bash -c 'read -p "Name of client instance to spawn: " username; echo $$username')
 
 # Environmental variables
 MKFILE_DIR := $(shell dirname "$(abspath $(lastword $(MAKEFILE_LIST)))")
@@ -41,6 +43,10 @@ PATHR = build/results/
 PATHC = build/coverage/
 
 BUILD_PATHS = $(PATHB) $(PATHD) $(PATHO) $(PATHR)
+
+# Source files without Main
+# Necessaary to prevent double definition of main in test executables (both Main.C and test files have a main function)
+SRC_FILES_WITHOUT_MAIN = $(filter-out $(PATHS)Main.c, $(SRC_FILES))
 
 # Test source
 SRCT = $(wildcard $(PATHT)*.c)
@@ -96,7 +102,7 @@ help: ## Makefile help
 
 
 run-client: build ## Run the client
-	./$(PATHB)$(BIN_TARGET).$(TARGET_EXTENSION) --client
+	./$(PATHB)$(BIN_TARGET).$(TARGET_EXTENSION) --client $(CLIENT_NAME)
 
 run-server: build ## Run server
 	./$(PATHB)$(BIN_TARGET).$(TARGET_EXTENSION) --server
@@ -167,11 +173,11 @@ $(PATHR)%.txt: $(PATHB)%.$(TARGET_EXTENSION)
 	-./$< > $@ 2>&1
 
 # Build Tests
-$(PATHB)Test%.$(TARGET_EXTENSION): $(PATHO)Test%.o $(PATHO)%.o $(PATHO)unity.o #$(PATHD)Test%.d
+$(PATHB)Test%.$(TARGET_EXTENSION): $(PATHO)Test%.o $(PATHO)unity.o $(SRC_FILES_WITHOUT_MAIN) # $(PATHD)Test%.d
 	$(LINK) -o $@ $^
 
 # Build Public Tests
-$(PATHB)PublicTest%.$(TARGET_EXTENSION): $(PATHO)PublicTest%.o $(PATHO)%.o $(PATHO)unity.o #$(PATHD)Test%.d
+$(PATHB)PublicTest%.$(TARGET_EXTENSION): $(PATHO)PublicTest%.o $(PATHO)unity.o $(SRC_FILES_WITHOUT_MAIN) #$(PATHD)Test%.d
 	$(LINK) -o $@ $^
 
 # Compile Tests
