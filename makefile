@@ -14,10 +14,11 @@ WORKING_DIR := $(shell pwd)
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 	INSTALLER = sudo apt-get update && sudo apt-get install -y
+	ADDITIONAL_FLAGS=
 endif
 ifeq ($(UNAME_S),Darwin)
 	INSTALLER = brew install
-
+	ADDITIONAL_FLAGS=-D_DARWIN_C_SOURCE
 endif
 # COVERAGE = $(shell readlink -f "$(PATHC)index.html")
 COVERAGE = $(shell realpath --relative-to "$(WORKING_DIR)" "$(PATHC)index.html")
@@ -60,7 +61,7 @@ COMPILE_WITH_COVERAGE = $(GCC) -fPIC -fprofile-arcs -ftest-coverage -c
 LINK = $(GCC) -fPIC -fprofile-arcs -ftest-coverage 
 DEPEND = $(GCC) -MM -MG -MF
 
-CFLAGS = -I. -I$(PATHU) -I$(PATHS) -pedantic -Wall -Werror -Wuninitialized -Wshadow -Wwrite-strings -Wconversion -Wunreachable-code -D_POSIX_SOURCE -DTEST
+CFLAGS = -I. -I$(PATHU) -I$(PATHS) $(ADDITIONAL_FLAGS) -pedantic -Wall -Werror -Wuninitialized -Wshadow -Wwrite-strings -Wconversion -Wunreachable-code -D_POSIX_SOURCE -DTEST
 
 #
 # This assume that tests follow the Naming Convention Test<MODULE_NAME>.
