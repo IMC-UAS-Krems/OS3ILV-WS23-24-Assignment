@@ -14,12 +14,13 @@ WORKING_DIR := $(shell pwd)
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 	INSTALLER = sudo apt-get update && sudo apt-get install -y
-	COVERAGE = $(shell realpath --relative-to "$(WORKING_DIR)" "$(PATHC)index.html")
 endif
 ifeq ($(UNAME_S),Darwin)
 	INSTALLER = brew install
-	COVERAGE = $(shell readlink -f "$(PATHC)index.html")
+
 endif
+# COVERAGE = $(shell readlink -f "$(PATHC)index.html")
+COVERAGE = $(shell realpath --relative-to "$(WORKING_DIR)" "$(PATHC)index.html")
 
 # Generic Commands
 CLEANUP = rm -rf
@@ -44,17 +45,14 @@ PATHC = build/coverage/
 
 BUILD_PATHS = $(PATHB) $(PATHD) $(PATHO) $(PATHR)
 
-# Source files without Main
-# Necessaary to prevent double definition of main in test executables (both Main.C and test files have a main function)
-SRC_FILES_WITHOUT_MAIN = $(filter-out $(PATHS)Main.c, $(SRC_FILES))
-
 # Test source
 SRCT = $(wildcard $(PATHT)*.c)
 # Public Test source
 SRCPT = $(wildcard $(PATHPT)*.c)
 # Source files
 SRC_FILES = $(wildcard $(PATHS)*.c $(PATHS)**/*.c $(PATHS)**/**/*.c $(PATHS)**/**/**/*.c)
-
+# Source files without Main: Necessary to avoid double definition of main in test executables
+SRC_FILES_WITHOUT_MAIN = $(filter-out $(PATHS)Main.c, $(SRC_FILES))
 
 
 COMPILE = $(GCC) -c
@@ -71,7 +69,10 @@ CFLAGS = -I. -I$(PATHU) -I$(PATHS) -pedantic -Wall -Werror -Wuninitialized -Wsha
 #
 RESULTS = $(patsubst $(PATHT)Test%.c,$(PATHR)Test%.txt,$(SRCT))
 PRESULTS = $(patsubst $(PATHPT)PublicTest%.c,$(PATHR)PublicTest%.txt,$(SRCPT))
+# Compiled sources
 SRC_FILES_OUT = $(patsubst $(PATHS)%.c,$(PATHO)%.o,$(SRC_FILES))
+# Compiled sources without Main: we need those to ensure gcno and gcda in the build/objs folder
+SRC_FILES_OUT_WITHOUT_MAIN = $(filter-out $(PATHO)Main.o, $(SRC_FILES_OUT))
 
 PASSED = `grep -s PASS $(PATHR)*.txt`
 FAIL = `grep -s FAIL $(PATHR)*.txt`
@@ -100,14 +101,13 @@ help: ## Makefile help
 	@echo "Available Commands:"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
+build: $(PATHB)$(BIN_TARGET).$(TARGET_EXTENSION) $(PATHO) ## Build the project
 
 run-client: build ## Run the client
 	./$(PATHB)$(BIN_TARGET).$(TARGET_EXTENSION) --client $(CLIENT_NAME)
 
 run-server: build ## Run server
 	./$(PATHB)$(BIN_TARGET).$(TARGET_EXTENSION) --server
-
-build: $(PATHB)$(BIN_TARGET).$(TARGET_EXTENSION) $(PATHO) ## Build the project
 	
 ## Link compiled files
 $(PATHB)$(BIN_TARGET).$(TARGET_EXTENSION): $(SRC_FILES_OUT)
@@ -146,6 +146,7 @@ clean: ## Clean temp files
 	$(CLEANUP) $(PATHB)*.$(TARGET_EXTENSION)
 	$(CLEANUP) $(PATHR)*.txt
 	$(CLEANUP) $(PATHC)
+	find . -iname "*.gc*" -exec $(CLEANUP) {} \;
 
 
 lint: deps ## Reformat (Lint) the source code with clang-format
@@ -153,7 +154,7 @@ lint: deps ## Reformat (Lint) the source code with clang-format
 
 
 coverage: $(PATHC)index.html
-	@echo ""
+	@echo " "
 	@echo "The coverage report is available here:" $(COVERAGE)
 
 ######
@@ -172,24 +173,36 @@ $(PATHC)index.html: test ## Compute code coverage and generate the report
 $(PATHR)%.txt: $(PATHB)%.$(TARGET_EXTENSION)
 	-./$< > $@ 2>&1
 
+# This create and executes the test files?
 # Build Tests
-$(PATHB)Test%.$(TARGET_EXTENSION): $(PATHO)Test%.o $(PATHO)unity.o $(SRC_FILES_WITHOUT_MAIN) # $(PATHD)Test%.d
+$(PATHB)Test%.$(TARGET_EXTENSION): $(PATHO)Test%.o $(PATHO)unity.o $(SRC_FILES_OUT_WITHOUT_MAIN)
+	@echo " "
+	@echo "Linking Tests using $(SRC_FILES_OUT_WITHOUT_MAIN)"
 	$(LINK) -o $@ $^
 
 # Build Public Tests
-$(PATHB)PublicTest%.$(TARGET_EXTENSION): $(PATHO)PublicTest%.o $(PATHO)unity.o $(SRC_FILES_WITHOUT_MAIN) #$(PATHD)Test%.d
+$(PATHB)PublicTest%.$(TARGET_EXTENSION): $(PATHO)PublicTest%.o $(PATHO)unity.o $(SRC_FILES_OUT_WITHOUT_MAIN)
+	@echo " "
+	@echo "Linking Public Tests using $(SRC_FILES_OUT_WITHOUT_MAIN)"
 	$(LINK) -o $@ $^
 
 # Compile Tests
 $(PATHO)%.o:: $(PATHT)%.c 
+	@echo " "
+	@echo "Compile test $<"
 	$(COMPILE) $(CFLAGS) $< -o $@
 
 # Compile Public Tests
-$(PATHO)%.o:: $(PATHPT)%.c 
+$(PATHO)%.o:: $(PATHPT)%.c
+	@echo " "
+	@echo "Compile public test $<" 
 	$(COMPILE) $(CFLAGS) $< -o $@
 
 # Build Source - Note that we add coverage instrumentation here
+# This creates the gcno file
 $(PATHO)%.o:: $(PATHS)%.c
+	@echo " "
+	@echo "Building $< source with coverage information"
 	$(MKDIR) -p $(@D)
 	$(COMPILE_WITH_COVERAGE) $(CFLAGS) $< -o $@
 
