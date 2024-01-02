@@ -84,17 +84,17 @@ UNITY := $(shell [[ -d $(PATHU) ]] && echo "Unity")
 
 # Set the link to the Coverage Report
 
-COVERAGE := $(shell type -p readlink > /dev/null && readlink -f "$(PATHC)index.html")
+COVERAGE := $(shell type -p greadlink > /dev/null && echo greadlink -f "$(PATHC)index.html")
 ifeq ($(COVERAGE),)
-COVERAGE := $(shell type -p greadlink > /dev/null && greadlink -f "$(PATHC)index.html")
+COVERAGE := $(shell type -p readlink > /dev/null && echo readlink -f "$(PATHC)index.html")
 endif
 
 ifeq ($(COVERAGE),)
-COVERAGE := $(shell type -p realpath > /dev/null && realpath --relative-to "$(WORKING_DIR)" "$(PATHC)index.html")
+COVERAGE := $(shell type -p realpath > /dev/null && echo realpath --relative-to "$(WORKING_DIR)" "$(PATHC)index.html")
 endif
 
 ifeq ($(COVERAGE),)
-(error "Cannot find a coverage link. Please install readlink, greadlink, or realpath")
+	COVERAGE := echo "Cannot find a coverage link. Please install readlink, greadlink, or realpath"
 endif
 
 ###### Declare Phonies
@@ -170,7 +170,7 @@ lint: deps ## Reformat (Lint) the source code with clang-format
 
 coverage: $(PATHC)index.html
 	@echo " "
-	@echo "The coverage report is available here:" $(COVERAGE)
+	@echo "The coverage report is available here:" $(shell $(COVERAGE))
 
 ######
 
