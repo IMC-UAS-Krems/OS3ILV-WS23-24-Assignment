@@ -20,8 +20,6 @@ ifeq ($(UNAME_S),Darwin)
 	INSTALLER = brew install
 	ADDITIONAL_FLAGS=-D_DARWIN_C_SOURCE
 endif
-# COVERAGE = $(shell readlink -f "$(PATHC)index.html")
-COVERAGE = $(shell realpath --relative-to "$(WORKING_DIR)" "$(PATHC)index.html")
 
 # Generic Commands
 CLEANUP = rm -rf
@@ -82,6 +80,22 @@ IGNORE = `grep -s IGNORE $(PATHR)*.txt`
 LCOV := $(shell command -v lcov 2> /dev/null)
 CLANG_FORMAT := $(shell command -v clang-format 2> /dev/null)
 UNITY := $(shell [[ -d $(PATHU) ]] && echo "Unity")
+
+
+# Set the link to the Coverage Report
+
+COVERAGE := $(shell type -p readlink > /dev/null && readlink -f "$(PATHC)index.html")
+ifeq ($(COVERAGE),)
+COVERAGE := $(shell type -p greadlink > /dev/null && greadlink -f "$(PATHC)index.html")
+endif
+
+ifeq ($(COVERAGE),)
+COVERAGE := $(shell type -p realpath > /dev/null && realpath --relative-to "$(WORKING_DIR)" "$(PATHC)index.html")
+endif
+
+ifeq ($(COVERAGE),)
+(error "Cannot find a coverage link. Please install readlink, greadlink, or realpath")
+endif
 
 ###### Declare Phonies
 
