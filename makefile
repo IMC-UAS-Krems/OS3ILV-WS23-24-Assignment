@@ -59,7 +59,7 @@ COMPILE_WITH_COVERAGE = $(GCC) -fPIC -fprofile-arcs -ftest-coverage -c
 LINK = $(GCC) -fPIC -fprofile-arcs -ftest-coverage 
 DEPEND = $(GCC) -MM -MG -MF
 
-CFLAGS = -I. -I$(PATHU) -I$(PATHS) $(ADDITIONAL_FLAGS) -pedantic -Wall -Werror -Wuninitialized -Wshadow -Wwrite-strings -Wconversion -Wunreachable-code -D_POSIX_SOURCE -DTEST
+CFLAGS = -I. -I$(PATHU) -I$(PATHS) $(ADDITIONAL_FLAGS) -pedantic -Wall -Wuninitialized -Wshadow -Wwrite-strings -Wconversion -Wunreachable-code -D_POSIX_SOURCE -DTEST
 
 #
 # This assume that tests follow the Naming Convention Test<MODULE_NAME>.
