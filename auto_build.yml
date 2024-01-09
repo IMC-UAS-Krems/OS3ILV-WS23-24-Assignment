@@ -1,0 +1,17 @@
+name: Test_Workflow
+
+on: [push]
+
+jobs:
+  build:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository 
+        uses: actions/checkout@main
+      - name: Checkout Submodule
+        run: git submodule update --init --recursive
+      - name: Make Tests
+        run: make -f public/makefile test
+      - name: Compute Coverage
+        run: make -f public/makefile coverage
